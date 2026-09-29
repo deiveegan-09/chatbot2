@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101510">
+  <title>RepBuddy — Workout Assistant</title>
+  <style>
+    :root {
+      --bg: #101510;
+      --panel: #191f19;
+      --panel-2: #202820;
+      --lime: #c6ff5e;
+      --text: #f2f5ec;
+      --muted: #9da99a;
+      --line: rgba(255,255,255,.09);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--text);
+      background: radial-gradient(ellipse at 12% 0%, #28351d 0, transparent 38%), var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: grid; place-items: center; padding: 24px;
+    }
+    .app { width: min(100%, 980px); min-height: min(780px, calc(100vh - 48px)); display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
+    .sidebar, .chat-panel { border: 1px solid var(--line); background: rgba(25,31,25,.92); border-radius: 24px; overflow: hidden; }
+    .sidebar { padding: 28px 22px; display: flex; flex-direction: column; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: -.6px; font-size: 21px; }
+    .logo { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; background: var(--lime); color: #17200e; font-size: 23px; }
+    .eyebrow { color: var(--lime); font-size: 10px; letter-spacing: 2px; font-weight: 800; margin: 38px 0 12px; }
+    h1 { font-size: 31px; line-height: 1.08; letter-spacing: -1.3px; margin: 0; }
+    .intro { color: var(--muted); font-size: 13px; line-height: 1.7; margin: 14px 0 24px; }
+    .tip { border: 1px solid var(--line); background: #202820; padding: 15px; border-radius: 16px; margin-top: auto; }
+    .tip strong { display: block; color: var(--lime); font-size: 12px; margin-bottom: 7px; }
+    .tip p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .chat-panel { display: flex; flex-direction: column; min-height: 650px; }
+    .topbar { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+    .bot { display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: #34452a; color: var(--lime); font-weight: 800; }
+    .bot-name { font-size: 14px; font-weight: 750; }
+    .status { color: var(--muted); font-size: 11px; margin-top: 4px; }
+    .online { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--lime); margin-right: 5px; }
+    .badge { border: 1px solid #3b4b30; border-radius: 999px; padding: 7px 10px; color: var(--lime); font-size: 10px; font-weight: 700; }
+    .messages { flex: 1; padding: 26px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+    .welcome { margin: auto 0; text-align: center; padding: 20px 0 28px; }
+    .welcome-mark { font-size: 42px; margin-bottom: 16px; }
+    .welcome h2 { margin: 0; font-size: 25px; letter-spacing: -.8px; }
+    .welcome p { color: var(--muted); font-size: 13px; line-height: 1.6; max-width: 340px; margin: 10px auto 22px; }
+    .suggestions { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; }
+    .suggestion { border: 1px solid var(--line); background: var(--panel-2); color: #dce5d5; padding: 10px 13px; border-radius: 12px; font-size: 12px; cursor: pointer; transition: .2s; }
+    .suggestion:hover { border-color: var(--lime); color: var(--lime); transform: translateY(-1px); }
+    .message { max-width: 86%; display: flex; flex-direction: column; gap: 6px; }
+    .message.user { align-self: flex-end; align-items: flex-end; }
+    .message.bot-message { align-self: flex-start; }
+    .bubble { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.7; padding: 13px 16px; border-radius: 16px; background: var(--panel-2); border: 1px solid var(--line); }
+    .user .bubble { background: var(--lime); color: #182010; border-color: transparent; border-bottom-right-radius: 5px; }
+    .bot-message .bubble { border-bottom-left-radius: 5px; }
+    .meta { color: var(--muted); font-size: 10px; padding: 0 4px; }
+    .composer-wrap { padding: 18px 22px 20px; border-top: 1px solid var(--line); }
+    .composer { display: flex; align-items: center; gap: 10px; background: #101510; border: 1px solid #384334; padding: 8px 9px 8px 16px; border-radius: 16px; }
+    .composer:focus-within { border-color: var(--lime); }
+    #messageInput { flex: 1; min-width: 0; border: 0; outline: 0; resize: none; color: var(--text); background: transparent; font: inherit; font-size: 13px; padding: 9px 0; max-height: 120px; }
+    #messageInput::placeholder { color: #788273; }
+    #sendButton { border: 0; width: 42px; height: 42px; border-radius: 12px; background: var(--lime); color: #192110; cursor: pointer; font-size: 19px; font-weight: 800; }
+    #sendButton:disabled { opacity: .5; cursor: wait; }
+    .disclaimer { text-align: center; color: #73806e; font-size: 10px; margin: 12px 0 0; }
+    .typing { color: var(--muted); font-size: 12px; padding: 8px 2px; }
+    @media (max-width: 720px) {
+      body { padding: 10px; }
+      .app { grid-template-columns: 1fr; min-height: calc(100vh - 20px); }
+      .sidebar { padding: 17px 19px; }
+      .eyebrow, .intro, .tip { display: none; }
+      h1 { font-size: 22px; margin-top: 16px; }
+      .chat-panel { min-height: 66vh; }
+      .messages { padding: 18px; }
+      .topbar { padding: 15px 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="logo">↗</div><span>RepBuddy</span></div>
+      <div class="eyebrow">YOUR PERSONAL FITNESS AI</div>
+      <h1>Stronger<br>starts here.</h1>
+      <p class="intro">Your focused workout companion. Get practical training ideas, exercise guidance, and recovery tips tailored to your goals.</p>
+      <div class="tip">
+        <strong>✦ TRAIN SMART</strong>
+        <p>Start at your level, focus on good form, and build consistency one workout at a time.</p>
+      </div>
+    </aside>
+
+    <section class="chat-panel">
+      <header class="topbar">
+        <div class="bot">
+          <div class="avatar">R</div>
+          <div><div class="bot-name">RepBuddy</div><div class="status"><span class="online"></span>Workout assistant</div></div>
+        </div>
+        <span class="badge">FITNESS ONLY</span>
+      </header>
+
+      <div class="messages" id="messages" aria-live="polite">
+        <div class="welcome" id="welcome">
+          <div class="welcome-mark">🏋️</div>
+          <h2>What are we training today?</h2>
+          <p>Tell me your goal, your experience, or what you want help with. Let's make your next workout count.</p>
+          <div class="suggestions">
+            <button class="suggestion" data-prompt="Create a beginner full-body workout">Beginner full-body plan</button>
+            <button class="suggestion" data-prompt="Give me a 15-minute no-equipment workout">15-min home workout</button>
+            <button class="suggestion" data-prompt="How can I improve my squat form?">Improve squat form</button>
+            <button class="suggestion" data-prompt="Suggest a post-workout recovery routine">Recovery tips</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="composer-wrap">
+        <form class="composer" id="chatForm">
+          <textarea id="messageInput" rows="1" placeholder="Ask about your workout..." aria-label="Your message" required></textarea>
+          <button id="sendButton" type="submit" aria-label="Send message">↑</button>
+        </form>
+        <p class="disclaimer">RepBuddy offers general fitness guidance, not medical advice.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("chatForm");
+    const input = document.getElementById("messageInput");
+    const messages = document.getElementById("messages");
+    const sendButton = document.getElementById("sendButton");
+    const welcome = document.getElementById("welcome");
+
+    function addMessage(text, role) {
+      if (welcome) welcome.remove();
+      const wrapper = document.createElement("div");
+      wrapper.className = `message ${role === "user" ? "user" : "bot-message"}`;
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = role === "user" ? "YOU" : "REPBUDDY";
+      wrapper.append(bubble, meta);
+      messages.appendChild(wrapper);
+      messages.scrollTop = messages.scrollHeight;
+      return wrapper;
+    }
+
+    async function sendMessage(text) {
+      const message = text.trim();
+      if (!message || sendButton.disabled) return;
+
+      addMessage(message, "user");
+      input.value = "";
+      input.style.height = "auto";
+      sendButton.disabled = true;
+
+      const typing = document.createElement("div");
+      typing.className = "typing";
+      typing.textContent = "RepBuddy is thinking…";
+      messages.appendChild(typing);
+      messages.scrollTop = messages.scrollHeight;
+
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message })
+        });
+        const data = await response.json();
+        typing.remove();
+        if (!response.ok) throw new Error(data.error || "Unable to get a reply.");
+        addMessage(data.reply, "bot");
+      } catch (error) {
+        typing.remove();
+        addMessage(error.message || "Something went wrong. Please try again.", "bot");
+      } finally {
+        sendButton.disabled = false;
+        input.focus();
+      }
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      sendMessage(input.value);
+    });
+
+    input.addEventListener("input", () => {
+      input.style.height = "auto";
+      input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    document.querySelectorAll(".suggestion").forEach((button) => {
+      button.addEventListener("click", () => sendMessage(button.dataset.prompt));
+    });
+  </script>
+</body>
+</html>
